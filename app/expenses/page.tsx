@@ -1,41 +1,52 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import ThemeToggle from "@/app/components/ThemeToggle";
 
 export default function ExpensesPage() {
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("dashboardTheme");
+      if (saved === "dark" || saved === "light") return saved;
+    }
+    return "light";
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("dashboardTheme", theme);
+    } catch {}
+  }, [theme]);
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className={`min-h-screen py-8 ${theme === "dark" ? "bg-black text-white" : "bg-gray-50 text-black"}`}>
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
             Expenses Management
           </h1>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-3">
+            <ThemeToggle theme={theme} onToggle={() => setTheme(theme === "light" ? "dark" : "light")} />
+            <Link
+              href="/"
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                theme === "dark" ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
-            Back to Dashboard
-          </Link>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Dashboard
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Add Expense Card */}
           <Link
             href="/expenses/add-expense"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            className={`${theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"} rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow`}
           >
             <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-lg mb-4">
               <svg
@@ -52,10 +63,10 @@ export default function ExpensesPage() {
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className={`text-xl font-semibold mb-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
               Add Expense
             </h2>
-            <p className="text-gray-600">
+            <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>
               Record labour and miscellaneous costs
             </p>
           </Link>
@@ -63,7 +74,7 @@ export default function ExpensesPage() {
           {/* View Expenses Card */}
           <Link
             href="/expenses/view-expenses"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            className={`${theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"} rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow`}
           >
             <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mb-4">
               <svg
@@ -80,10 +91,10 @@ export default function ExpensesPage() {
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className={`text-xl font-semibold mb-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
               View All Expenses
             </h2>
-            <p className="text-gray-600">
+            <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>
               View all expenses including inventory costs
             </p>
           </Link>
@@ -92,7 +103,7 @@ export default function ExpensesPage() {
         <div className="mt-6">
           <Link
             href="/"
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className={`font-medium ${theme === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"}`}
           >
             ← Back to Dashboard
           </Link>

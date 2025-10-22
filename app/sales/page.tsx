@@ -4,10 +4,24 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
+import ThemeToggle from "@/app/components/ThemeToggle";
 
 export default function SalesPage() {
   const [todayTotal, setTodayTotal] = useState<number | null>(null);
   const [todayLoading, setTodayLoading] = useState<boolean>(true);
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("dashboardTheme");
+      if (saved === "dark" || saved === "light") return saved;
+    }
+    return "light";
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("dashboardTheme", theme);
+    } catch {}
+  }, [theme]);
 
   useEffect(() => {
     const fetchToday = async () => {
@@ -39,38 +53,33 @@ export default function SalesPage() {
     fetchToday();
   }, []);
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className={`min-h-screen py-8 ${theme === "dark" ? "bg-black text-white" : "bg-gray-50 text-black"}`}>
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
             Sales Management
           </h1>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-3">
+            <ThemeToggle theme={theme} onToggle={() => setTheme(theme === "light" ? "dark" : "light")} />
+            <Link
+              href="/"
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                theme === "dark" ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
-            Back to Dashboard
-          </Link>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Dashboard
+            </Link>
+          </div>
         </div>
 
         {/* Today's total sales */}
         <div className="grid grid-cols-1 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-sm font-medium text-gray-500 mb-1">Today's Total Sales</h2>
-            <p className="text-3xl font-bold text-gray-900">
+          <div className={`${theme === "dark" ? "bg-gray-800" : "bg-white"} rounded-lg shadow-md p-6`}>
+            <h2 className={`text-sm font-medium mb-1 ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Today's Total Sales</h2>
+            <p className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
               {todayLoading ? "—" : `₹${(todayTotal ?? 0).toFixed(2)}`}
             </p>
           </div>
@@ -80,7 +89,7 @@ export default function SalesPage() {
           {/* Add Sale Card */}
           <Link
             href="/sales/add-sale"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            className={`${theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"} rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow`}
           >
             <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mb-4">
               <svg
@@ -97,10 +106,10 @@ export default function SalesPage() {
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className={`text-xl font-semibold mb-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
               Add Sale
             </h2>
-            <p className="text-gray-600">
+            <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>
               Record a new sale transaction
             </p>
           </Link>
@@ -108,7 +117,7 @@ export default function SalesPage() {
           {/* View Sales Card */}
           <Link
             href="/sales/view-sales"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            className={`${theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"} rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow`}
           >
             <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4">
               <svg
@@ -125,10 +134,10 @@ export default function SalesPage() {
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className={`text-xl font-semibold mb-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
               View Sales
             </h2>
-            <p className="text-gray-600">
+            <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>
               View all sales transactions
             </p>
           </Link>
@@ -137,7 +146,7 @@ export default function SalesPage() {
         <div className="mt-6">
           <Link
             href="/"
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className={`font-medium ${theme === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"}`}
           >
             ← Back to Dashboard
           </Link>

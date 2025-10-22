@@ -1,13 +1,29 @@
 "use client";
 
 import { useAuth } from "@/lib/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import ThemeToggle from "@/app/components/ThemeToggle";
 
 export default function IndexPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("dashboardTheme");
+      if (saved === "dark" || saved === "light") return saved;
+    }
+    return "light";
+  });
+
+  // Persist theme choice
+  useEffect(() => {
+    try {
+      localStorage.setItem("dashboardTheme", theme);
+    } catch {}
+  }, [theme]);
+
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/auth/login");
@@ -15,23 +31,24 @@ export default function IndexPage() {
   }, [loading, user, router]);
   if (!user) return null; // wait for auth
   return (
-    <div className="min-h-screen bg-white p-8">
+    <div className={`min-h-screen p-8 ${theme === "dark" ? "bg-black text-white" : "bg-white text-black"}`}>
       <header className="max-w-5xl mx-auto flex items-center justify-between">
         <div className="text-xl font-semibold">
-          <span className="text-gray-900">Software</span>
+          <span className={theme === "dark" ? "text-white" : "text-gray-900"}>Software</span>
           <span className="text-orange-600">.</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-600 hidden sm:inline">{user?.displayName || user?.email}</span>
+          <span className={`text-sm hidden sm:inline ${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>{user?.displayName || user?.email}</span>
+          <ThemeToggle theme={theme} onToggle={() => setTheme(theme === "light" ? "dark" : "light")} />
           <LogoutButton />
         </div>
       </header>
       <main className="max-w-5xl mx-auto mt-10 text-center">
-       <h1 className="text-4xl sm:text-5xl font-bold text-black">
-  <span className="text-4xl font-extrabold text-black">Welcome to</span>{" "}
+       <h1 className="text-4xl sm:text-5xl font-bold">
+  <span className="text-4xl font-extrabold">Welcome to</span>{" "}
   <span className="text-orange-600">Oxyjal</span>
 </h1>
-        <p className="mt-3 text-gray-600">You are logged in.</p>
+        <p className={`mt-3 ${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>You are logged in.</p>
         
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
           <Link

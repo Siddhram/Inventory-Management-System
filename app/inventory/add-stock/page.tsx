@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
+import ThemeToggle from "@/app/components/ThemeToggle";
 
 type ProductType = "waterbottle" | "coldrink";
 type BottleSize = "200ml" | "250ml" | "500ml" | "1l" | "2l";
@@ -19,6 +20,13 @@ interface StockData {
 
 export default function AddStockPage() {
   const router = useRouter();
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("dashboardTheme");
+      if (saved === "dark" || saved === "light") return saved;
+    }
+    return "light";
+  });
   const [productType, setProductType] = useState<ProductType>("waterbottle");
   const [quantity, setQuantity] = useState<number>(0);
   const [bottleSize, setBottleSize] = useState<BottleSize>("500ml");
@@ -29,6 +37,13 @@ export default function AddStockPage() {
   const [success, setSuccess] = useState("");
 
   const bottleSizes: BottleSize[] = ["200ml", "250ml", "500ml", "1l", "2l"];
+
+  // persist theme when changed via toggle here
+  useEffect(() => {
+    try {
+      localStorage.setItem("dashboardTheme", theme);
+    } catch {}
+  }, [theme]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,17 +90,21 @@ export default function AddStockPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className={`min-h-screen py-8 ${theme === "dark" ? "bg-black text-white" : "bg-gray-50 text-black"}`}>
       <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className={`${theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"} rounded-lg shadow-md p-8`}>
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
               Add New Stock
             </h1>
-            <button
-              onClick={() => router.push("/inventory")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-            >
+            <div className="flex items-center gap-3">
+              <ThemeToggle theme={theme} onToggle={() => setTheme(theme === "light" ? "dark" : "light")} />
+              <button
+                onClick={() => router.push("/inventory")}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                  theme === "dark" ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -100,17 +119,18 @@ export default function AddStockPage() {
                 />
               </svg>
               Back
-            </button>
+              </button>
+            </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            <div className={`${theme === "dark" ? "bg-red-900 border border-red-700 text-red-200" : "bg-red-50 border border-red-200 text-red-700"} px-4 py-3 rounded mb-4`}>
               {error}
             </div>
           )}
 
           {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+            <div className={`${theme === "dark" ? "bg-green-900 border border-green-700 text-green-200" : "bg-green-50 border border-green-200 text-green-700"} px-4 py-3 rounded mb-4`}>
               {success}
             </div>
           )}
@@ -118,13 +138,15 @@ export default function AddStockPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Product Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
                 Product Type *
               </label>
               <select
                 value={productType}
                 onChange={(e) => setProductType(e.target.value as ProductType)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  theme === "dark" ? "bg-gray-900 text-white border-gray-700" : "border-gray-300 text-black"
+                }`}
                 required
               >
                 <option value="waterbottle">Water Bottle</option>
@@ -135,13 +157,15 @@ export default function AddStockPage() {
             {/* Bottle Size - Only for Water Bottles */}
             {productType === "waterbottle" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
                   Bottle Size *
                 </label>
                 <select
                   value={bottleSize}
                   onChange={(e) => setBottleSize(e.target.value as BottleSize)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    theme === "dark" ? "bg-gray-900 text-white border-gray-700" : "border-gray-300 text-black"
+                  }`}
                   required
                 >
                   {bottleSizes.map((size) => (
@@ -155,7 +179,7 @@ export default function AddStockPage() {
 
             {/* Quantity */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
                 Quantity *
               </label>
               <input
@@ -163,14 +187,16 @@ export default function AddStockPage() {
                 value={quantity}
                 onChange={(e) => setQuantity(Number(e.target.value))}
                 min="1"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  theme === "dark" ? "bg-gray-900 text-white border-gray-700" : "border-gray-300 text-black"
+                }`}
                 required
               />
             </div>
 
             {/* Amount Paid */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
                 Amount Paid (₹) *
               </label>
               <input
@@ -179,21 +205,25 @@ export default function AddStockPage() {
                 onChange={(e) => setAmountPaid(Number(e.target.value))}
                 min="0"
                 step="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  theme === "dark" ? "bg-gray-900 text-white border-gray-700" : "border-gray-300 text-black"
+                }`}
                 required
               />
             </div>
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
                 Notes
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  theme === "dark" ? "bg-gray-900 text-white border-gray-700" : "border-gray-300 text-black"
+                }`}
                 placeholder="Add any additional notes about this stock batch..."
               />
             </div>
@@ -210,7 +240,9 @@ export default function AddStockPage() {
               <button
                 type="button"
                 onClick={() => router.push("/inventory")}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium ${
+                  theme === "dark" ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
               >
                 Cancel
               </button>

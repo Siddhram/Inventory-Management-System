@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { collection, query, getDocs, where, Timestamp } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
 import Link from "next/link";
+import ThemeToggle from "@/app/components/ThemeToggle";
 
 interface Sale {
   id: string;
@@ -39,10 +40,23 @@ export default function ProfitPage() {
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [viewMode, setViewMode] = useState<"daily" | "monthly">("daily");
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("dashboardTheme");
+      if (saved === "dark" || saved === "light") return saved;
+    }
+    return "light";
+  });
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("dashboardTheme", theme);
+    } catch {}
+  }, [theme]);
 
   const fetchData = async () => {
     try {
@@ -187,10 +201,10 @@ export default function ProfitPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${theme === "dark" ? "bg-black text-white" : "bg-gray-50 text-black"}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading profit data...</p>
+          <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-600"} mt-4`}>Loading profit data...</p>
         </div>
       </div>
     );
@@ -201,26 +215,29 @@ export default function ProfitPage() {
   const totalProfit = getTotalProfit();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className={`min-h-screen py-8 ${theme === "dark" ? "bg-black text-white" : "bg-gray-50 text-black"}`}>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Profit Analysis</h1>
-          <Link
-            href="/"
-            className="text-blue-600 hover:text-blue-700 font-medium"
-          >
-            ← Back to Dashboard
-          </Link>
+          <h1 className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>Profit Analysis</h1>
+          <div className="flex items-center gap-3">
+            <ThemeToggle theme={theme} onToggle={() => setTheme(theme === "light" ? "dark" : "light")} />
+            <Link
+              href="/"
+              className={`${theme === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"} font-medium`}
+            >
+              ← Back to Dashboard
+            </Link>
+          </div>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          <div className={`${theme === "dark" ? "bg-red-900 border border-red-700 text-red-200" : "bg-red-50 border border-red-200 text-red-700"} px-4 py-3 rounded mb-4`}>
             {error}
           </div>
         )}
 
         {/* Overall Profit Card */}
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg p-8 mb-8 text-white">
+  <div className="bg-linear-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg p-8 mb-8 text-white">
           <h2 className="text-xl font-semibold mb-2">Total Profit (All Time)</h2>
           <p className="text-6xl font-bold">
             ₹{totalProfit.toFixed(2)}
@@ -231,7 +248,7 @@ export default function ProfitPage() {
         </div>
 
         {/* View Mode Toggle */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className={`${theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"} rounded-lg shadow-md p-6 mb-6`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex gap-2">
               <button
@@ -239,7 +256,7 @@ export default function ProfitPage() {
                 className={`px-6 py-2 rounded-lg font-medium transition-colors ${
                   viewMode === "daily"
                     ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    : theme === "dark" ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
                 Daily View
@@ -249,7 +266,7 @@ export default function ProfitPage() {
                 className={`px-6 py-2 rounded-lg font-medium transition-colors ${
                   viewMode === "monthly"
                     ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    : theme === "dark" ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
                 Monthly View
@@ -258,14 +275,16 @@ export default function ProfitPage() {
 
             {viewMode === "daily" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
                   Select Date
                 </label>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    theme === "dark" ? "bg-gray-900 text-white border-gray-700" : "border-gray-300 text-black"
+                  }`}
                 />
               </div>
             )}
@@ -275,8 +294,8 @@ export default function ProfitPage() {
         {/* Daily View */}
         {viewMode === "daily" && dailyStats && (
           <div>
-            <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            <div className={`${theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"} rounded-lg shadow-lg p-8 mb-6`}>
+              <h2 className={`text-2xl font-bold mb-6 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
                 Profit for {new Date(selectedDate).toLocaleDateString('en-IN', { 
                   year: 'numeric', 
                   month: 'long', 
@@ -285,38 +304,36 @@ export default function ProfitPage() {
               </h2>
               
               <div className="text-center mb-8">
-                <p className={`text-7xl font-bold ${
-                  dailyStats.profit >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
+                <p className={`text-7xl font-bold ${dailyStats.profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                   ₹{dailyStats.profit.toFixed(2)}
                 </p>
-                <p className="text-gray-500 mt-2">
+                <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-500"} mt-2`}>
                   {dailyStats.profit >= 0 ? 'Profit' : 'Loss'}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-green-50 rounded-lg p-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Revenue</h3>
-                  <p className="text-3xl font-bold text-green-600">
+                <div className={`${theme === "dark" ? "bg-green-900" : "bg-green-50"} rounded-lg p-6`}>
+                  <h3 className={`text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Revenue</h3>
+                  <p className="text-3xl font-bold text-green-500">
                     ₹{dailyStats.revenue.toFixed(2)}
                   </p>
                 </div>
-                <div className="bg-red-50 rounded-lg p-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Cost</h3>
-                  <p className="text-3xl font-bold text-red-600">
+                <div className={`${theme === "dark" ? "bg-red-900" : "bg-red-50"} rounded-lg p-6`}>
+                  <h3 className={`text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Cost</h3>
+                  <p className="text-3xl font-bold text-red-500">
                     ₹{dailyStats.cost.toFixed(2)}
                   </p>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Units Sold</h3>
-                  <p className="text-3xl font-bold text-blue-600">
+                <div className={`${theme === "dark" ? "bg-blue-900" : "bg-blue-50"} rounded-lg p-6`}>
+                  <h3 className={`text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Units Sold</h3>
+                  <p className="text-3xl font-bold text-blue-500">
                     {dailyStats.unitsSold}
                   </p>
                 </div>
-                <div className="bg-purple-50 rounded-lg p-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Sales Count</h3>
-                  <p className="text-3xl font-bold text-purple-600">
+                <div className={`${theme === "dark" ? "bg-purple-900" : "bg-purple-50"} rounded-lg p-6`}>
+                  <h3 className={`text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Sales Count</h3>
+                  <p className="text-3xl font-bold text-purple-500">
                     {dailyStats.salesCount}
                   </p>
                 </div>
@@ -327,64 +344,62 @@ export default function ProfitPage() {
 
         {/* Monthly View */}
         {viewMode === "monthly" && (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">Monthly Profit Breakdown</h2>
+          <div className={`${theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"} rounded-lg shadow-md overflow-hidden`}>
+            <div className={`px-6 py-4 border-b ${theme === "dark" ? "border-gray-700" : "border-gray-200"}`}>
+              <h2 className={`text-xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>Monthly Profit Breakdown</h2>
             </div>
             
             {monthlyProfits.length === 0 ? (
               <div className="px-6 py-12 text-center">
-                <p className="text-gray-500">No profit data available</p>
+                <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>No profit data available</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className={`${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
                         Month
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
                         Revenue
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
                         Cost
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
                         Profit/Loss
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
                         Sales
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className={`${theme === "dark" ? "bg-gray-800 divide-gray-700" : "bg-white divide-gray-200"} divide-y`}>
                     {monthlyProfits.map((monthData) => (
-                      <tr key={monthData.month} className="hover:bg-gray-50">
+                      <tr key={monthData.month} className={`${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-50"}`}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-lg font-semibold text-gray-900">
+                          <span className={`text-lg font-semibold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
                             {formatMonth(monthData.month)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-lg font-bold text-green-600">
+                          <span className="text-lg font-bold text-green-500">
                             ₹{monthData.revenue.toFixed(2)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-lg font-bold text-red-600">
+                          <span className="text-lg font-bold text-red-500">
                             ₹{monthData.cost.toFixed(2)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`text-2xl font-bold ${
-                            monthData.profit >= 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
+                          <span className={`text-2xl font-bold ${monthData.profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             ₹{monthData.profit.toFixed(2)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-lg font-semibold text-gray-900">
+                          <span className={`text-lg font-semibold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
                             {monthData.salesCount}
                           </span>
                         </td>
