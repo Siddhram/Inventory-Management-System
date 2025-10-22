@@ -29,7 +29,7 @@ export default function IndexPage() {
       <main className="max-w-5xl mx-auto mt-10 text-center">
        <h1 className="text-4xl sm:text-5xl font-bold text-black">
   <span className="text-4xl font-extrabold text-black">Welcome to</span>{" "}
-  <span className="text-orange-600">Software</span>
+  <span className="text-orange-600">Oxygel</span>
 </h1>
         <p className="mt-3 text-gray-600">You are logged in.</p>
         
