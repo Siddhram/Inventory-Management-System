@@ -29,7 +29,7 @@ export default function IndexPage() {
       <main className="max-w-5xl mx-auto mt-10 text-center">
        <h1 className="text-4xl sm:text-5xl font-bold text-black">
   <span className="text-4xl font-extrabold text-black">Welcome to</span>{" "}
-  <span className="text-orange-600">Oxygel</span>
+  <span className="text-orange-600">Oxyjal</span>
 </h1>
         <p className="mt-3 text-gray-600">You are logged in.</p>
         
@@ -152,6 +152,26 @@ export default function IndexPage() {
               />
             </svg>
             Lending
+          </Link>
+
+          <Link
+            href="/delavaries"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium shadow-md"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v8m4-4H8m12 0a8 8 0 11-16 0 8 8 0 0116 0z"
+              />
+            </svg>
+            Delavaries
           </Link>
         </div>
       </main>
