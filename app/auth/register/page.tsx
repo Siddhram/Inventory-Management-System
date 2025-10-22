@@ -1,13 +1,13 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function RegisterPage() {
+function RegisterFormInner() {
   const router = useRouter();
   const search = useSearchParams();
 
@@ -150,5 +150,13 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center p-6">Loading...</div>}>
+      <RegisterFormInner />
+    </Suspense>
   );
 }
