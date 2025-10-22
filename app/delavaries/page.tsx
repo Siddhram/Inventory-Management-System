@@ -25,6 +25,7 @@ export default function DelavariesPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     void fetchItems();
@@ -76,7 +77,7 @@ export default function DelavariesPage() {
       const publicId: string = data.public_id;
 
       // 2) Save to Firestore
-      const expireAt = Date.now() + 24 * 60 * 60 * 1000; // +24 hours
+  const expireAt = Date.now() + 2 * 24 * 60 * 60 * 1000; // +48 hours (2 days)
       await addDoc(collection(db, "delavaries"), {
         imageUrl,
         cloudinaryPublicId: publicId,
@@ -88,7 +89,7 @@ export default function DelavariesPage() {
       setFile(null);
       setNotes("");
       if (fileInputRef.current) fileInputRef.current.value = "";
-      setSuccess("Added successfully. Auto-deletes in 24 hours.");
+  setSuccess("Added successfully. Auto-deletes in 48 hours.");
       void fetchItems();
       // Hide form after a short delay so the user sees the success message
       setTimeout(() => {
@@ -131,6 +132,7 @@ export default function DelavariesPage() {
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm text-gray-700 mb-1">Image</label>
+                {/* Gallery/file picker */}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -138,6 +140,25 @@ export default function DelavariesPage() {
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                   className="block w-full text-sm text-black"
                 />
+                {/* Hidden camera capture input (opens device camera when supported) */}
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+                <div className="mt-2 flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="w-full sm:w-auto bg-orange-100 text-orange-700 px-3 py-2 rounded-md hover:bg-orange-200"
+                  >
+                    Take photo (camera)
+                  </button>
+                  <span className="text-xs text-gray-500 self-center">Or choose from gallery above</span>
+                </div>
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1">Notes</label>

@@ -1,8 +1,43 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
+import { getFirestoreDb } from "@/lib/firebase";
 
 export default function SalesPage() {
+  const [todayTotal, setTodayTotal] = useState<number | null>(null);
+  const [todayLoading, setTodayLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchToday = async () => {
+      try {
+        const db = getFirestoreDb();
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(start);
+        tomorrow.setDate(start.getDate() + 1);
+        const q = query(
+          collection(db, "sales"),
+          where("createdAt", ">=", Timestamp.fromDate(start)),
+          where("createdAt", "<", Timestamp.fromDate(tomorrow))
+        );
+        const snap = await getDocs(q);
+        let sum = 0;
+        snap.forEach((doc) => {
+          const data = doc.data() as any;
+          const val = Number(data?.totalAmount || 0);
+          if (!Number.isNaN(val)) sum += val;
+        });
+        setTodayTotal(sum);
+      } catch {
+        setTodayTotal(0);
+      } finally {
+        setTodayLoading(false);
+      }
+    };
+    fetchToday();
+  }, []);
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
@@ -29,6 +64,16 @@ export default function SalesPage() {
             </svg>
             Back to Dashboard
           </Link>
+        </div>
+
+        {/* Today's total sales */}
+        <div className="grid grid-cols-1 gap-6 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-sm font-medium text-gray-500 mb-1">Today's Total Sales</h2>
+            <p className="text-3xl font-bold text-gray-900">
+              {todayLoading ? "—" : `₹${(todayTotal ?? 0).toFixed(2)}`}
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
