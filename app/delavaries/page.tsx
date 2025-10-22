@@ -105,7 +105,8 @@ export default function DelavariesPage() {
   return (
     <div className="min-h-screen bg-white p-4 sm:p-8">
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        {/* Header: stack on mobile, row on larger screens */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Delavaries</h1>
           {/* Add button triggers form section focus */}
           <button
@@ -117,7 +118,7 @@ export default function DelavariesPage() {
                 fileInputRef.current?.focus();
               }, 50);
             }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
           >
             Add new entry
           </button>
@@ -173,7 +174,7 @@ export default function DelavariesPage() {
           </div>
         )}
 
-        {/* List */}
+        {/* List: cards stack on mobile, image above content */}
         <div className="space-y-4">
           {loading ? (
             <p className="text-gray-600">Loading...</p>
@@ -181,10 +182,10 @@ export default function DelavariesPage() {
             <p className="text-gray-600">No items yet.</p>
           ) : (
             items.map((it) => (
-              <div key={it.id} className="border rounded-lg p-4 flex flex-col sm:flex-row gap-4">
-                <img src={it.imageUrl} alt="delavary" className="w-full sm:w-48 h-48 object-cover rounded" />
+              <div key={it.id} className="border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                <img src={it.imageUrl} alt="delavary" className="w-full sm:w-48 h-56 sm:h-48 object-cover rounded" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{it.notes || "—"}</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap wrap-break-word">{it.notes || "—"}</p>
                   <div className="mt-2 text-xs text-gray-500">
                     <span>Auto-delete: {it.expireAt ? new Date(it.expireAt).toLocaleString() : "unknown"}</span>
                   </div>
