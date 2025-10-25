@@ -33,6 +33,15 @@ interface MonthlyProfit {
   salesCount: number;
 }
 
+interface SizeBreakdownRow {
+  size: string;
+  quantity: number;
+  unitCost: number; // average purchase price per unit (up to sale date)
+  revenue: number;  // sum of sale pricePerUnit * quantity
+  cost: number;     // sum of COGS for the size (using per-sale COGS)
+  profit: number;   // revenue - cost
+}
+
 export default function ProfitPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [purchases, setPurchases] = useState<InventoryPurchase[]>([]);
@@ -116,22 +125,18 @@ export default function ProfitPage() {
   const getDailyProfit = () => {
     const targetDate = new Date(selectedDate);
     
-    // Calculate revenue from sales on this date
+    // Grab sales for selected date
     const dailySales = sales.filter(sale => {
       const saleDate = getDateFromTimestamp(sale.createdAt);
       return isSameDay(saleDate, targetDate);
     });
     
-    const revenue = dailySales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const unitsSold = dailySales.reduce((sum, sale) => sum + sale.quantity, 0);
+    // Revenue = sum of (pricePerUnit * quantity) for the day, respecting bottle sizes
+    const revenue = dailySales.reduce((sum, sale) => sum + (Number(sale.pricePerUnit) || 0) * (Number(sale.quantity) || 0), 0);
+    const unitsSold = dailySales.reduce((sum, sale) => sum + (Number(sale.quantity) || 0), 0);
     
-    // Calculate cost from purchases on this date
-    const dailyPurchases = purchases.filter(purchase => {
-      const purchaseDate = getDateFromTimestamp(purchase.createdAt);
-      return isSameDay(purchaseDate, targetDate);
-    });
-    
-    const cost = dailyPurchases.reduce((sum, purchase) => sum + purchase.amountPaid, 0);
+    // Cost = sum of COGS for each sale, computed using weighted-average unit cost per size up to that sale
+    const cost = dailySales.reduce((sum, sale) => sum + getCOGSForSale(sale), 0);
     
     const profit = revenue - cost;
     
@@ -156,26 +161,9 @@ export default function ProfitPage() {
         };
       }
       
-      monthlyData[monthKey].revenue += sale.totalAmount;
+      monthlyData[monthKey].revenue += (Number(sale.pricePerUnit) || 0) * (Number(sale.quantity) || 0);
+      monthlyData[monthKey].cost += getCOGSForSale(sale);
       monthlyData[monthKey].salesCount += 1;
-    });
-    
-    // Process purchases
-    purchases.forEach(purchase => {
-      const purchaseDate = getDateFromTimestamp(purchase.createdAt);
-      const monthKey = `${purchaseDate.getFullYear()}-${String(purchaseDate.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = {
-          month: monthKey,
-          revenue: 0,
-          cost: 0,
-          profit: 0,
-          salesCount: 0,
-        };
-      }
-      
-      monthlyData[monthKey].cost += purchase.amountPaid;
     });
     
     // Calculate profit
@@ -194,9 +182,72 @@ export default function ProfitPage() {
   };
 
   const getTotalProfit = () => {
-    const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const totalCost = purchases.reduce((sum, purchase) => sum + purchase.amountPaid, 0);
+    const totalRevenue = sales.reduce((sum, sale) => sum + (Number(sale.pricePerUnit) || 0) * (Number(sale.quantity) || 0), 0);
+    const totalCost = sales.reduce((sum, sale) => sum + getCOGSForSale(sale), 0);
     return totalRevenue - totalCost;
+  };
+
+  // Compute cost of goods sold for a given sale using weighted-average cost of inventory
+  // Input: sale with productType, bottleSize (optional), quantity, createdAt
+  // Output: numeric cost = weighted average unit purchase cost up to sale date * sale quantity
+  const getCOGSForSale = (sale: Sale): number => {
+    const saleDate = getDateFromTimestamp(sale.createdAt);
+    // Filter purchases for matching product & bottleSize, up to the sale date
+    const matchingPurchases = purchases.filter(p => {
+      if (p.productType !== sale.productType) return false;
+      const pSize = (p.bottleSize || '').toString();
+      const sSize = (sale.bottleSize || '').toString();
+      if (pSize !== sSize) return false;
+      const pDate = getDateFromTimestamp(p.createdAt);
+      return pDate.getTime() <= saleDate.getTime();
+    });
+
+    const computeWeightedAvg = (list: InventoryPurchase[]) => {
+      const totals = list.reduce(
+        (acc, itm) => {
+          const qty = Number(itm.quantity) || 0;
+          const amt = Number(itm.amountPaid) || 0;
+          return { qty: acc.qty + qty, amt: acc.amt + amt };
+        },
+        { qty: 0, amt: 0 }
+      );
+      return totals.qty > 0 ? totals.amt / totals.qty : 0;
+    };
+
+    let avgUnitCost = computeWeightedAvg(matchingPurchases);
+    if (avgUnitCost === 0) {
+      // fall back to all-time average for this SKU if no purchases found up to sale date
+      const allPurchasesForSku = purchases.filter(p => {
+        if (p.productType !== sale.productType) return false;
+        const pSize = (p.bottleSize || '').toString();
+        const sSize = (sale.bottleSize || '').toString();
+        return pSize === sSize;
+      });
+      avgUnitCost = computeWeightedAvg(allPurchasesForSku);
+    }
+
+    return avgUnitCost * (Number(sale.quantity) || 0);
+  };
+
+  // Get average unit cost for a SKU (productType + bottleSize) up to a given date
+  const getAverageUnitCostForSku = (productType: string, bottleSize: string, upToDate?: Date): number => {
+    const list = purchases.filter(p => {
+      if (p.productType !== productType) return false;
+      const pSize = (p.bottleSize || '').toString();
+      if (pSize !== bottleSize) return false;
+      if (!upToDate) return true;
+      const pDate = getDateFromTimestamp(p.createdAt);
+      return pDate.getTime() <= upToDate.getTime();
+    });
+    const totals = list.reduce(
+      (acc, itm) => {
+        const qty = Number(itm.quantity) || 0;
+        const amt = Number(itm.amountPaid) || 0;
+        return { qty: acc.qty + qty, amt: acc.amt + amt };
+      },
+      { qty: 0, amt: 0 }
+    );
+    return totals.qty > 0 ? totals.amt / totals.qty : 0;
   };
 
   if (loading) {
@@ -213,6 +264,38 @@ export default function ProfitPage() {
   const dailyStats = viewMode === "daily" ? getDailyProfit() : null;
   const monthlyProfits = viewMode === "monthly" ? getMonthlyProfits() : [];
   const totalProfit = getTotalProfit();
+  const dailySizeBreakdown = viewMode === "daily" ? (() => {
+    const targetDate = new Date(selectedDate);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    // collect waterbottle sales only for the selected date with a size
+    const rowsMap: Record<string, SizeBreakdownRow> = {};
+    sales.forEach((sale) => {
+      const saleDate = getDateFromTimestamp(sale.createdAt);
+      if (!isSameDay(saleDate, targetDate)) return;
+      if (sale.productType !== 'waterbottle' || !sale.bottleSize) return;
+      const size = sale.bottleSize;
+      if (!rowsMap[size]) {
+        rowsMap[size] = {
+          size,
+          quantity: 0,
+          unitCost: getAverageUnitCostForSku('waterbottle', size, endOfDay),
+          revenue: 0,
+          cost: 0,
+          profit: 0,
+        };
+      }
+      const revenue = (Number(sale.pricePerUnit) || 0) * (Number(sale.quantity) || 0);
+      const cogs = getCOGSForSale(sale);
+      rowsMap[size].quantity += Number(sale.quantity) || 0;
+      rowsMap[size].revenue += revenue;
+      rowsMap[size].cost += cogs;
+    });
+    const order = ['200ml','250ml','500ml','1l','2l'];
+    return Object.values(rowsMap)
+      .map(r => ({ ...r, profit: r.revenue - r.cost }))
+      .sort((a,b) => order.indexOf(a.size) - order.indexOf(b.size));
+  })() : [];
 
   return (
     <div className={`min-h-screen py-8 ${theme === "dark" ? "bg-black text-white" : "bg-gray-50 text-black"}`}>
@@ -338,6 +421,37 @@ export default function ProfitPage() {
                   </p>
                 </div>
               </div>
+              {dailySizeBreakdown.length > 0 && (
+                <div className="mt-8 overflow-x-auto">
+                  <h3 className={`text-lg font-semibold mb-3 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                    Today's Bottle Size Breakdown
+                  </h3>
+                  <table className="w-full">
+                    <thead className={`${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
+                      <tr>
+                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Bottle Size</th>
+                        <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Quantity</th>
+                        <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Unit Cost (₹)</th>
+                        <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Revenue (₹)</th>
+                        <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Cost (₹)</th>
+                        <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>Profit (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`${theme === "dark" ? "bg-gray-800 divide-gray-700" : "bg-white divide-gray-200"} divide-y`}>
+                      {dailySizeBreakdown.map((r) => (
+                        <tr key={r.size}>
+                          <td className="px-6 py-3 text-sm font-medium">{r.size.toUpperCase()}</td>
+                          <td className="px-6 py-3 text-sm text-right">{r.quantity}</td>
+                          <td className="px-6 py-3 text-sm text-right">₹{r.unitCost.toFixed(2)}</td>
+                          <td className="px-6 py-3 text-sm text-right text-green-500">₹{r.revenue.toFixed(2)}</td>
+                          <td className="px-6 py-3 text-sm text-right text-red-500">₹{r.cost.toFixed(2)}</td>
+                          <td className={`px-6 py-3 text-sm text-right ${r.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>₹{r.profit.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}
