@@ -140,6 +140,24 @@ export default function ViewSalesPage() {
 
   const stats = getTotalStats();
 
+  // Compute bottle size-wise totals for waterbottle productType
+  const getBottleSizeTotals = () => {
+    const order = ["200ml", "250ml", "500ml", "1l", "2l"] as const;
+    const totals: Record<string, number> = {};
+    for (const size of order) totals[size] = 0;
+
+    sales.forEach((s) => {
+      if (s.productType === "waterbottle" && s.bottleSize) {
+        const key = s.bottleSize.toLowerCase();
+        totals[key] = (totals[key] || 0) + (Number(s.quantity) || 0);
+      }
+    });
+
+    return order.map((size) => ({ size, quantity: totals[size] || 0 }));
+  };
+
+  const bottleSizeTotals = getBottleSizeTotals();
+
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${theme === "dark" ? "bg-black text-white" : "bg-gray-50 text-black"}`}>
@@ -222,174 +240,190 @@ export default function ViewSalesPage() {
           </div>
         </div>
 
-        {/* Sales List */}
+        {/* Sales List with Bottle Size Summary in header */}
         <div className={`${theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"} rounded-lg shadow-md overflow-hidden`}>
           <div className={`px-6 py-4 border-b ${theme === "dark" ? "border-gray-700" : "border-gray-200"}`}>
-            <h2 className={`text-xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>Sales Transactions</h2>
-          </div>
-          
-          {sales.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>No sales found</p>
-              <Link
-                href="/sales/add-sale"
-                className="text-green-500 hover:text-green-400 font-medium mt-2 inline-block"
-              >
-                Add your first sale
-              </Link>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <h2 className={`text-xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>Sales Transactions</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                {bottleSizeTotals.map((row) => (
+                  <span
+                    key={row.size}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                      theme === "dark" ? "bg-gray-700 text-gray-200" : "bg-gray-100 text-gray-800"
+                    }`}
+                    title={`Total ${row.size.toUpperCase()} sold`}
+                  >
+                    <span className="opacity-80">{row.size.toUpperCase()}:</span>
+                    <span className="font-semibold">{row.quantity}</span>
+                  </span>
+                ))}
+              </div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className={`${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
-                  <tr>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Product
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Customer
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Quantity
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Price/Unit
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Total
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Paid
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Pending
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Payment
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Status
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Date
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className={`${theme === "dark" ? "bg-gray-800 divide-gray-700" : "bg-white divide-gray-200"} divide-y`}>
-                  {sales.map((sale) => (
-                    <tr key={sale.id} className={`${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-50"}`}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                            sale.productType === "waterbottle"
-                              ? theme === "dark" ? "bg-blue-900 text-blue-200" : "bg-blue-100 text-blue-800"
-                              : theme === "dark" ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800"
-                          }`}>
-                            {sale.productType === "waterbottle" ? "Water Bottle" : "Cold Drink"}
-                          </span>
-                          {sale.bottleSize && (
-                            <div className={`text-xs mt-1 ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                              {sale.bottleSize.toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                        {sale.customerName || "—"}
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                        {sale.quantity}
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                        ₹{sale.pricePerUnit.toFixed(2)}
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                        ₹{sale.totalAmount.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-500">
-                        ₹{sale.amountPaid.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-orange-500">
-                        ₹{sale.amountPending.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                          sale.paymentMode === "cash"
-                            ? theme === "dark" ? "bg-gray-700 text-gray-200" : "bg-gray-100 text-gray-800"
-                            : theme === "dark" ? "bg-purple-900 text-purple-200" : "bg-purple-100 text-purple-800"
-                        }`}>
-                          {sale.paymentMode.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                          sale.paymentStatus === "paid"
-                            ? theme === "dark" ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800"
-                            : sale.paymentStatus === "lending"
-                            ? theme === "dark" ? "bg-purple-900 text-purple-200" : "bg-purple-100 text-purple-800"
-                            : theme === "dark" ? "bg-orange-900 text-orange-200" : "bg-orange-100 text-orange-800"
-                        }`}>
-                          {sale.paymentStatus.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
-                        {formatDate(sale.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {(sale.paymentStatus === "pending" || sale.paymentStatus === "lending") && (
+          </div>
+            
+            {sales.length === 0 ? (
+              <div className="px-6 py-12 text-center">
+                <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>No sales found</p>
+                <Link
+                  href="/sales/add-sale"
+                  className="text-green-500 hover:text-green-400 font-medium mt-2 inline-block"
+                >
+                  Add your first sale
+                </Link>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className={`${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
+                    <tr>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Product
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Customer
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Quantity
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Price/Unit
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Total
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Paid
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Pending
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Payment
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Status
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Date
+                      </th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className={`${theme === "dark" ? "bg-gray-800 divide-gray-700" : "bg-white divide-gray-200"} divide-y`}>
+                    {sales.map((sale) => (
+                      <tr key={sale.id} className={`${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-50"}`}>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            {editingSale === sale.id ? (
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="number"
-                                  value={paymentAmount}
-                                  onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                                  min="0"
-                                  max={sale.amountPending}
-                                  step="0.01"
-                                  className={`w-24 px-2 py-1 border rounded ${theme === "dark" ? "bg-gray-900 text-white border-gray-700" : "border-gray-300 text-black"}`}
-                                  placeholder="Amount"
-                                />
-                                <button
-                                  onClick={() => handlePayment(sale.id, sale.amountPending)}
-                                  disabled={processingPayment}
-                                  className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 disabled:bg-gray-400"
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setEditingSale(null);
-                                    setPaymentAmount(0);
-                                  }}
-                                  className={`${theme === "dark" ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"} px-3 py-1 rounded`}
-                                >
-                                  Cancel
-                                </button>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                              sale.productType === "waterbottle"
+                                ? theme === "dark" ? "bg-blue-900 text-blue-200" : "bg-blue-100 text-blue-800"
+                                : theme === "dark" ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800"
+                            }`}>
+                              {sale.productType === "waterbottle" ? "Water Bottle" : "Cold Drink"}
+                            </span>
+                            {sale.bottleSize && (
+                              <div className={`text-xs mt-1 ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                                {sale.bottleSize.toUpperCase()}
                               </div>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setEditingSale(sale.id);
-                                  setPaymentAmount(0);
-                                }}
-                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                              >
-                                Edit Payment
-                              </button>
                             )}
                           </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                          {sale.customerName || "—"}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                          {sale.quantity}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                          ₹{sale.pricePerUnit.toFixed(2)}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                          ₹{sale.totalAmount.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-500">
+                          ₹{sale.amountPaid.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-orange-500">
+                          ₹{sale.amountPending.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                            sale.paymentMode === "cash"
+                              ? theme === "dark" ? "bg-gray-700 text-gray-200" : "bg-gray-100 text-gray-800"
+                              : theme === "dark" ? "bg-purple-900 text-purple-200" : "bg-purple-100 text-purple-800"
+                          }`}>
+                            {sale.paymentMode.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                            sale.paymentStatus === "paid"
+                              ? theme === "dark" ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800"
+                              : sale.paymentStatus === "lending"
+                              ? theme === "dark" ? "bg-purple-900 text-purple-200" : "bg-purple-100 text-purple-800"
+                              : theme === "dark" ? "bg-orange-900 text-orange-200" : "bg-orange-100 text-orange-800"
+                          }`}>
+                            {sale.paymentStatus.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>
+                          {formatDate(sale.createdAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {(sale.paymentStatus === "pending" || sale.paymentStatus === "lending") && (
+                            <div>
+                              {editingSale === sale.id ? (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="number"
+                                    value={paymentAmount}
+                                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                                    min="0"
+                                    max={sale.amountPending}
+                                    step="0.01"
+                                    className={`w-24 px-2 py-1 border rounded ${theme === "dark" ? "bg-gray-900 text-white border-gray-700" : "border-gray-300 text-black"}`}
+                                    placeholder="Amount"
+                                  />
+                                  <button
+                                    onClick={() => handlePayment(sale.id, sale.amountPending)}
+                                    disabled={processingPayment}
+                                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 disabled:bg-gray-400"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingSale(null);
+                                      setPaymentAmount(0);
+                                    }}
+                                    className={`${theme === "dark" ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"} px-3 py-1 rounded`}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setEditingSale(sale.id);
+                                    setPaymentAmount(0);
+                                  }}
+                                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                                >
+                                  Edit Payment
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
         </div>
 
         <div className="mt-6">
