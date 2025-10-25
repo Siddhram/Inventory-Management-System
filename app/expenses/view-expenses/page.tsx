@@ -48,14 +48,29 @@ export default function ViewExpensesPage() {
       const db = getFirestoreDb();
       const allExpenses: Expense[] = [];
 
-      // Fetch labour and miscellaneous expenses
-      const expensesQuery = query(collection(db, "expenses"), orderBy("createdAt", "desc"));
-      const expensesSnapshot = await getDocs(expensesQuery);
-      expensesSnapshot.forEach((doc) => {
+      // Fetch labour expenses
+      const labourQueryRef = query(collection(db, "labourExpenses"), orderBy("createdAt", "desc"));
+      const labourSnapshot = await getDocs(labourQueryRef);
+      labourSnapshot.forEach((doc) => {
         const data = doc.data();
         allExpenses.push({
           id: doc.id,
-          type: data.category,
+          type: "labour",
+          amount: data.amount,
+          reason: data.reason,
+          description: data.description,
+          createdAt: data.createdAt,
+        });
+      });
+
+      // Fetch miscellaneous expenses
+      const miscQueryRef = query(collection(db, "miscExpenses"), orderBy("createdAt", "desc"));
+      const miscSnapshot = await getDocs(miscQueryRef);
+      miscSnapshot.forEach((doc) => {
+        const data = doc.data();
+        allExpenses.push({
+          id: doc.id,
+          type: "miscellaneous",
           amount: data.amount,
           reason: data.reason,
           description: data.description,

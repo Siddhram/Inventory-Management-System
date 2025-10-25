@@ -64,7 +64,9 @@ export default function AddExpensePage() {
         createdAt: serverTimestamp(),
       };
 
-      await addDoc(collection(db, "expenses"), expenseData);
+      // Write to separate collections per request
+      const targetCollection = category === "labour" ? "labourExpenses" : "miscExpenses";
+      await addDoc(collection(db, targetCollection), expenseData);
       
       setSuccess("Expense added successfully!");
       
