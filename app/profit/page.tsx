@@ -22,6 +22,7 @@ interface InventoryPurchase {
   bottleSize?: string;
   quantity: number;
   amountPaid: number;
+  unitCost?: number;
   createdAt: any;
 }
 
@@ -206,7 +207,8 @@ export default function ProfitPage() {
       const totals = list.reduce(
         (acc, itm) => {
           const qty = Number(itm.quantity) || 0;
-          const amt = Number(itm.amountPaid) || 0;
+          const unit = itm.unitCost != null ? Number(itm.unitCost) : undefined;
+          const amt = unit != null ? unit * qty : (Number(itm.amountPaid) || 0);
           return { qty: acc.qty + qty, amt: acc.amt + amt };
         },
         { qty: 0, amt: 0 }
@@ -242,7 +244,8 @@ export default function ProfitPage() {
     const totals = list.reduce(
       (acc, itm) => {
         const qty = Number(itm.quantity) || 0;
-        const amt = Number(itm.amountPaid) || 0;
+        const unit = itm.unitCost != null ? Number(itm.unitCost) : undefined;
+        const amt = unit != null ? unit * qty : (Number(itm.amountPaid) || 0);
         return { qty: acc.qty + qty, amt: acc.amt + amt };
       },
       { qty: 0, amt: 0 }

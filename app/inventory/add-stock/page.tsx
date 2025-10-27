@@ -15,6 +15,7 @@ interface StockData {
   bottleSize?: BottleSize;
   notes: string;
   amountPaid: number;
+  unitCost: number; // computed per-unit price at entry time
   createdAt: any;
 }
 
@@ -54,11 +55,22 @@ export default function AddStockPage() {
     try {
       const db = getFirestoreDb();
       
+      if (quantity <= 0) {
+        throw new Error("Quantity must be greater than 0");
+      }
+      if (amountPaid < 0) {
+        throw new Error("Amount paid cannot be negative");
+      }
+
+      // compute per unit price and round to 2 decimals
+      const unitCost = Number(((amountPaid || 0) / quantity).toFixed(2));
+
       const stockData: StockData = {
         productType,
         quantity,
         notes,
         amountPaid,
+        unitCost,
         createdAt: serverTimestamp(),
       };
 
