@@ -8,7 +8,7 @@ import ThemeToggle from "@/app/components/ThemeToggle";
 
 interface StockItem {
   id: string;
-  productType: "waterbottle" | "coldrink";
+  productType: "waterbottle" | "waterbottle_oxyjal" | "waterbottle_aarogyam" | "coldrink";
   quantity: number;
   bottleSize?: string;
   notes: string;
@@ -60,10 +60,28 @@ export default function ViewStockPage() {
     });
   };
 
+  const isWaterBottle = (type: string) =>
+    type === "waterbottle" || type === "waterbottle_oxyjal" || type === "waterbottle_aarogyam";
+
+  const productLabel = (type: string) => {
+    if (type === "waterbottle_oxyjal") return "Water Bottle (Oxyjal)";
+    if (type === "waterbottle_aarogyam") return "Water Bottle (Aarogyam)";
+    if (type === "waterbottle") return "Water Bottle";
+    if (type === "coldrink") return "Cold Drink";
+    return type;
+  };
+
   const getTotalQuantity = (productType: string, size?: string) => {
     return stocks
       .filter((stock: StockItem) => {
-        if (productType === "waterbottle" && size) {
+        if (productType === "waterbottle") {
+          // Treat both water bottle variants as waterbottle for summaries
+          if (size) {
+            return isWaterBottle(stock.productType) && stock.bottleSize === size;
+          }
+          return isWaterBottle(stock.productType);
+        }
+        if (size) {
           return stock.productType === productType && stock.bottleSize === size;
         }
         return stock.productType === productType;
@@ -181,11 +199,11 @@ export default function ViewStockPage() {
                     <tr key={stock.id} className={`${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-50"}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          stock.productType === "waterbottle"
+                          isWaterBottle(stock.productType)
                             ? theme === "dark" ? "bg-blue-900 text-blue-200" : "bg-blue-100 text-blue-800"
                             : theme === "dark" ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800"
                         }`}>
-                          {stock.productType === "waterbottle" ? "Water Bottle" : "Cold Drink"}
+                          {productLabel(stock.productType)}
                         </span>
                       </td>
                       <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-white" : "text-gray-900"}`}>{stock.bottleSize ? stock.bottleSize.toUpperCase() : "N/A"}</td>

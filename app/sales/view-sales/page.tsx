@@ -11,7 +11,7 @@ type PaymentStatus = "paid" | "pending" | "lending";
 
 interface Sale {
   id: string;
-  productType: "waterbottle" | "coldrink";
+  productType: "waterbottle" | "waterbottle_oxyjal" | "waterbottle_aarogyam" | "coldrink";
   bottleSize?: string;
   quantity: number;
   pricePerUnit: number;
@@ -141,13 +141,22 @@ export default function ViewSalesPage() {
   const stats = getTotalStats();
 
   // Compute bottle size-wise totals for waterbottle productType
+  const isWaterBottle = (type: string) => type === "waterbottle" || type === "waterbottle_oxyjal" || type === "waterbottle_aarogyam";
+  const productLabel = (type: string) => {
+    if (type === "waterbottle_oxyjal") return "Water Bottle (Oxyjal)";
+    if (type === "waterbottle_aarogyam") return "Water Bottle (Aarogyam)";
+    if (type === "waterbottle") return "Water Bottle";
+    if (type === "coldrink") return "Cold Drink";
+    return type;
+  };
+
   const getBottleSizeTotals = () => {
     const order = ["200ml", "250ml", "500ml", "1l", "2l"] as const;
     const totals: Record<string, number> = {};
     for (const size of order) totals[size] = 0;
 
     sales.forEach((s) => {
-      if (s.productType === "waterbottle" && s.bottleSize) {
+      if (isWaterBottle(s.productType) && s.bottleSize) {
         const key = s.bottleSize.toLowerCase();
         totals[key] = (totals[key] || 0) + (Number(s.quantity) || 0);
       }
@@ -318,11 +327,11 @@ export default function ViewSalesPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                              sale.productType === "waterbottle"
+                              isWaterBottle(sale.productType)
                                 ? theme === "dark" ? "bg-blue-900 text-blue-200" : "bg-blue-100 text-blue-800"
                                 : theme === "dark" ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800"
                             }`}>
-                              {sale.productType === "waterbottle" ? "Water Bottle" : "Cold Drink"}
+                              {productLabel(sale.productType)}
                             </span>
                             {sale.bottleSize && (
                               <div className={`text-xs mt-1 ${theme === "dark" ? "text-gray-300" : "text-gray-500"}`}>

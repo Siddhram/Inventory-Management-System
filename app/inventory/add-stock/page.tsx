@@ -6,7 +6,7 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
 import ThemeToggle from "@/app/components/ThemeToggle";
 
-type ProductType = "waterbottle" | "coldrink";
+type ProductType = "waterbottle_oxyjal" | "waterbottle_aarogyam" | "coldrink";
 type BottleSize = "200ml" | "250ml" | "500ml" | "1l" | "2l";
 
 interface StockData {
@@ -28,7 +28,7 @@ export default function AddStockPage() {
     }
     return "light";
   });
-  const [productType, setProductType] = useState<ProductType>("waterbottle");
+  const [productType, setProductType] = useState<ProductType>("waterbottle_oxyjal");
   const [quantity, setQuantity] = useState<number>(0);
   const [bottleSize, setBottleSize] = useState<BottleSize>("500ml");
   const [notes, setNotes] = useState("");
@@ -38,6 +38,7 @@ export default function AddStockPage() {
   const [success, setSuccess] = useState("");
 
   const bottleSizes: BottleSize[] = ["200ml", "250ml", "500ml", "1l", "2l"];
+  const isWaterBottle = (p: ProductType) => p === "waterbottle_oxyjal" || p === "waterbottle_aarogyam";
 
   // persist theme when changed via toggle here
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function AddStockPage() {
       };
 
       // Add bottle size only for water bottles
-      if (productType === "waterbottle") {
+      if (isWaterBottle(productType)) {
         stockData.bottleSize = bottleSize;
       }
 
@@ -161,13 +162,14 @@ export default function AddStockPage() {
                 }`}
                 required
               >
-                <option value="waterbottle">Water Bottle</option>
+                <option value="waterbottle_oxyjal">Water Bottle (Oxyjal)</option>
+                <option value="waterbottle_aarogyam">Water Bottle (Aarogyam)</option>
                 <option value="coldrink">Cold Drink</option>
               </select>
             </div>
 
             {/* Bottle Size - Only for Water Bottles */}
-            {productType === "waterbottle" && (
+            {isWaterBottle(productType) && (
               <div>
                 <label className={`block text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
                   Bottle Size *

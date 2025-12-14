@@ -6,7 +6,7 @@ import { collection, addDoc, serverTimestamp, getDocs, query, where, writeBatch,
 import { getFirestoreDb } from "@/lib/firebase";
 import ThemeToggle from "@/app/components/ThemeToggle";
 
-type ProductType = "waterbottle" | "coldrink";
+type ProductType = "waterbottle_oxyjal" | "waterbottle_aarogyam" | "coldrink";
 type BottleSize = "200ml" | "250ml" | "500ml" | "1l" | "2l";
 type PaymentMode = "cash" | "online";
 type PaymentStatus = "paid" | "pending" | "lending";
@@ -42,7 +42,7 @@ export default function AddSalePage() {
     }
     return "light";
   });
-  const [productType, setProductType] = useState<ProductType>("waterbottle");
+  const [productType, setProductType] = useState<ProductType>("waterbottle_oxyjal");
   const [bottleSize, setBottleSize] = useState<BottleSize>("500ml");
   const [quantity, setQuantity] = useState<number>(0);
   const [pricePerUnit, setPricePerUnit] = useState<number>(0);
@@ -58,6 +58,7 @@ export default function AddSalePage() {
   const [availableStock, setAvailableStock] = useState<number>(0);
 
   const bottleSizes: BottleSize[] = ["200ml", "250ml", "500ml", "1l", "2l"];
+  const isWaterBottle = (p: string) => p === "waterbottle_oxyjal" || p === "waterbottle_aarogyam" || p === "waterbottle"; // include legacy
 
   useEffect(() => {
     fetchAvailableStock();
@@ -79,7 +80,7 @@ export default function AddSalePage() {
       const db = getFirestoreDb();
       let q;
       
-      if (productType === "waterbottle") {
+      if (isWaterBottle(productType)) {
         q = query(
           collection(db, "inventory"),
           where("productType", "==", productType),
@@ -108,7 +109,7 @@ export default function AddSalePage() {
     const db = getFirestoreDb();
     let q;
     
-    if (productType === "waterbottle") {
+    if (isWaterBottle(productType)) {
       q = query(
         collection(db, "inventory"),
         where("productType", "==", productType),
@@ -181,7 +182,7 @@ export default function AddSalePage() {
         createdAt: serverTimestamp(),
       };
 
-      if (productType === "waterbottle") {
+      if (isWaterBottle(productType)) {
         saleData.bottleSize = bottleSize;
       }
 
@@ -263,13 +264,14 @@ export default function AddSalePage() {
                 }`}
                 required
               >
-                <option value="waterbottle">Water Bottle</option>
+                <option value="waterbottle_oxyjal">Water Bottle (Oxyjal)</option>
+                <option value="waterbottle_aarogyam">Water Bottle (Aarogyam)</option>
                 <option value="coldrink">Cold Drink</option>
               </select>
             </div>
 
             {/* Bottle Size - Only for Water Bottles */}
-            {productType === "waterbottle" && (
+            {isWaterBottle(productType) && (
               <div>
                 <label className={`block text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
                   Bottle Size *
